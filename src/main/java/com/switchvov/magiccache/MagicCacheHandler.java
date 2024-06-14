@@ -12,9 +12,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
-    public static final String CRLF = "\r\n";
-    public static final String OK = "+OK" + CRLF;
-    public static final String PONG = "+PONG" + CRLF;
+    private static final String CRLF = "\r\n";
+    private static final String STR_PREFIX = "+";
+    private static final String BULK_STR_PREFIX = "$";
+    private static final String OK = "OK";
+    private static final String PONG = "PONG";
+    private static final String INFO = "MagicCache server, [v1.0.0], created by switch." + CRLF
+            + "Mock Redis Server at 2024-06-14." + CRLF;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
@@ -29,16 +33,25 @@ public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
                     + CRLF + "$4"
                     + CRLF + "PING"
                     + CRLF);
-            return;
         } else if ("PING".equals(cmd)) {
             String ret = PONG;
             if (args.length >= 5) {
-                ret = "+" + args[4] + CRLF;
+                ret = args[4];
             }
-            writeByteBuf(ctx, ret);
-            return;
+            simpleString(ctx, ret);
+        } else if ("INFO".equals(cmd)) {
+            bulkString(ctx, INFO);
+        } else {
+            writeByteBuf(ctx, OK);
         }
-        writeByteBuf(ctx, OK);
+    }
+
+    private void bulkString(ChannelHandlerContext ctx, String content) {
+        writeByteBuf(ctx, BULK_STR_PREFIX + content.getBytes().length + CRLF + content + CRLF);
+    }
+
+    private void simpleString(ChannelHandlerContext ctx, String content) {
+        writeByteBuf(ctx, STR_PREFIX + content + CRLF);
     }
 
     private void writeByteBuf(ChannelHandlerContext ctx, String content) {
