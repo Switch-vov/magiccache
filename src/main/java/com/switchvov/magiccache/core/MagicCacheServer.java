@@ -1,5 +1,6 @@
-package com.switchvov.magiccache;
+package com.switchvov.magiccache.core;
 
+import com.switchvov.magiccache.MagicPlugin;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;

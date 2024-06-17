@@ -1,4 +1,4 @@
-package com.switchvov.magiccache;
+package com.switchvov.magiccache.core;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
