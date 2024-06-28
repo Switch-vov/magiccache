@@ -29,9 +29,6 @@ public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
     private static final String ARRAY_EMPTY = ARRAY_PREFIX + "0";
 
     private static final String OK = "OK";
-    private static final String PONG = "PONG";
-    private static final String INFO = "MagicCache server, [v1.0.0], created by switch." + CRLF
-            + "Mock Redis Server at 2024-06-14." + CRLF;
 
     private static final MagicCache CACHE = new MagicCache();
 
@@ -41,82 +38,25 @@ public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
         log.info(" ===>[MagicCache] CacheHandler received: {}", String.join(",", args));
         String cmd = args[2].toUpperCase();
 
-        if ("COMMAND".equals(cmd)) {
-            writeByteBuf(ctx, "*2"
-                    + CRLF + "$7"
-                    + CRLF + "COMMAND"
-                    + CRLF + "$4"
-                    + CRLF + "PING"
-                    + CRLF);
-        } else if ("PING".equals(cmd)) {
-            String ret = PONG;
-            if (args.length >= 5) {
-                ret = args[4];
-            }
-            simpleString(ctx, ret);
-        } else if ("INFO".equals(cmd)) {
-            bulkString(ctx, INFO);
-        } else if ("SET".equals(cmd)) {
-            if (args.length <= 6) {
-                CACHE.set(args[4], "");
-            } else {
-                CACHE.set(args[4], args[6]);
-            }
-            simpleString(ctx, OK);
-        } else if ("GET".equals(cmd)) {
-            String value = CACHE.get(args[4]);
-            bulkString(ctx, value);
-        } else if ("STRLEN".equals(cmd)) {
-            String value = CACHE.get(args[4]);
-            integer(ctx, Objects.isNull(value) ? 0 : value.length());
-        } else if ("DEL".equals(cmd)) {
-            int len = (args.length - 3) / 2;
-            String[] keys = new String[len];
-            for (int i = 0; i < len; i++) {
-                keys[i] = args[4 + i * 2];
-            }
-            int del = CACHE.del(keys);
-            integer(ctx, del);
-        } else if ("EXISTS".equals(cmd)) {
-            int len = (args.length - 3) / 2;
-            String[] keys = new String[len];
-            for (int i = 0; i < len; i++) {
-                keys[i] = args[4 + i * 2];
-            }
-            integer(ctx, CACHE.exists(keys));
-        } else if ("MGET".equals(cmd)) {
-            int len = (args.length - 3) / 2;
-            String[] keys = new String[len];
-            for (int i = 0; i < len; i++) {
-                keys[i] = args[4 + i * 2];
-            }
-            array(ctx, CACHE.mget(keys));
-        } else if ("MSET".equals(cmd)) {
-            int len = (args.length - 3) / 4;
-            String[] keys = new String[len];
-            String[] vals = new String[len];
-            for (int i = 0; i < len; i++) {
-                keys[i] = args[4 + i * 4];
-                vals[i] = args[6 + i * 4];
-            }
-            CACHE.mset(keys, vals);
-            simpleString(ctx, OK);
-        } else if ("INCR".equals(cmd)) {
-            String key = args[4];
-            try {
-                integer(ctx, CACHE.incr(key));
-            } catch (NumberFormatException e) {
-                error(ctx, String.format("NFE %s value[%s] is not an integer.", key, CACHE.get(key)));
-            }
-        } else if ("DECR".equals(cmd)) {
-            String key = args[4];
-            try {
-                integer(ctx, CACHE.decr(key));
-            } catch (NumberFormatException e) {
-                error(ctx, String.format("NFE %s value[%s] is not an integer.", key, CACHE.get(key)));
-            }
+        Command command = Commands.get(cmd);
+        if (Objects.nonNull(command)) {
+            Reply<?> reply = command.exec(CACHE, args);
+            log.info(" ===>[MagicCache] CMD[{}] => type:{} value:{}", cmd, reply.type, reply.value);
+            replyContext(ctx, reply);
         } else {
-            writeByteBuf(ctx, OK);
+            Reply<String> reply = Reply.error("ERR unsupported command: " + cmd);
+            replyContext(ctx, reply);
+        }
+    }
+
+    private void replyContext(ChannelHandlerContext ctx, Reply<?> reply) {
+        switch (reply.getType()) {
+            case INT -> integer(ctx, (int) reply.getValue());
+            case ERROR -> error(ctx, (String) reply.getValue());
+            case SIMPLE_STRING -> simpleString(ctx, (String) reply.getValue());
+            case BULK_STRING -> bulkString(ctx, (String) reply.getValue());
+            case ARRAY -> array(ctx, (String[]) reply.getValue());
+            default -> simpleString(ctx, OK);
         }
     }
 
