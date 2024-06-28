@@ -20,6 +20,9 @@ public class MagicCache {
 
     public String get(String key) {
         CacheEntry<String> entry = (CacheEntry<String>) map.get(key);
+        if (Objects.isNull(entry)) {
+            return null;
+        }
         return entry.getValue();
     }
 
@@ -177,7 +180,7 @@ public class MagicCache {
         if (end >= size) {
             end = size - 1;
         }
-        int len = Math.min(size, end - size + 1);
+        int len = Math.min(size, end - start + 1);
         String[] ret = new String[len];
         for (int i = 0; i < len; i++) {
             ret[i] = exist.get(start + i);

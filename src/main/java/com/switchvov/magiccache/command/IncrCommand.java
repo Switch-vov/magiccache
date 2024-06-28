@@ -19,6 +19,10 @@ public class IncrCommand implements Command {
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String key = getKey(args);
-        return Reply.integer(cache.incr(key));
+        try {
+            return Reply.integer(cache.incr(key));
+        } catch (NumberFormatException e) {
+            return Reply.error(String.format("NFE %s value[%s] is not an integer.", key, cache.get(key)));
+        }
     }
 }

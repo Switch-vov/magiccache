@@ -19,7 +19,7 @@ public class MgetCommand implements Command {
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        String key = getKey(args);
-        return Reply.array(cache.mget(key));
+        String[] keys = getParams(args);
+        return Reply.array(cache.mget(keys));
     }
 }

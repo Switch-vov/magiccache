@@ -20,6 +20,10 @@ public class SetCommand implements Command {
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String key = getKey(args);
+        if (args.length <= 6) {
+            cache.set(key, "");
+            return Reply.string(OK);
+        }
         String val = getVal(args);
         cache.set(key, val);
         return Reply.string(OK);

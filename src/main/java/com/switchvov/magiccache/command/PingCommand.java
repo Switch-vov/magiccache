@@ -24,6 +24,6 @@ public class PingCommand implements Command {
         if (args.length >= 5) {
             ret = args[4];
         }
-        return Reply.string(OK);
+        return Reply.string(ret);
     }
 }
