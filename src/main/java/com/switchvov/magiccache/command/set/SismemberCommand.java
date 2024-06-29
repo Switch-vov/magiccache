@@ -1,25 +1,26 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.set;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Mget command.
+ * Sismember command.
  *
  * @author switch
- * @since 2024/06/28
+ * @since 2024/06/29
  */
-public class MgetCommand implements Command {
+public class SismemberCommand implements Command {
 
     @Override
     public String name() {
-        return "MGET";
+        return "SISMEMBER";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        String[] keys = getParams(args);
-        return Reply.array(cache.mget(keys));
+        String key = getKey(args);
+        String val = getVal(args);
+        return Reply.integer(cache.sismember(key, val));
     }
 }

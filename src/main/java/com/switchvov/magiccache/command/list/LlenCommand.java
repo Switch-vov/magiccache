@@ -1,25 +1,25 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.list;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Strlen command.
+ * Llen command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class StrlenCommand implements Command {
+public class LlenCommand implements Command {
 
     @Override
     public String name() {
-        return "STRLEN";
+        return "LLEN";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String key = getKey(args);
-        return Reply.integer(cache.strlen(key));
+        return Reply.integer(cache.llen(key));
     }
 }

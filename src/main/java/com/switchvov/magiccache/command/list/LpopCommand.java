@@ -1,20 +1,22 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.list;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
+import java.util.Objects;
+
 /**
- * Rpop command.
+ * Lpop command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class RpopCommand implements Command {
+public class LpopCommand implements Command {
 
     @Override
     public String name() {
-        return "RPOP";
+        return "LPOP";
     }
 
     @Override
@@ -24,10 +26,9 @@ public class RpopCommand implements Command {
         if (args.length > 6) {
             String val = getVal(args);
             count = Integer.parseInt(val);
-            return Reply.array(cache.rpop(key, count));
+            return Reply.array(cache.lpop(key, count));
         }
-
-        String[] lpop = cache.rpop(key, count);
-        return Reply.bulkString(lpop == null ? null : lpop[0]);
+        String[] lpop = cache.lpop(key, count);
+        return Reply.bulkString(Objects.isNull(lpop) ? null : lpop[0]);
     }
 }

@@ -1,24 +1,25 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.set;
 
 import com.switchvov.magiccache.core.Command;
-import com.switchvov.magiccache.core.Commands;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Command command.
+ * Scard command.
  *
  * @author switch
- * @since 2024/06/28
+ * @since 2024/06/29
  */
-public class CommandCommand implements Command {
+public class ScardCommand implements Command {
+
     @Override
     public String name() {
-        return "COMMAND";
+        return "SCARD";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        return Reply.array(Commands.getCommandNames());
+        String key = getKey(args);
+        return Reply.integer(cache.scard(key));
     }
 }

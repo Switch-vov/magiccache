@@ -1,27 +1,26 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.list;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Mset command.
+ * Lpush command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class MsetCommand implements Command {
+public class LpushCommand implements Command {
 
     @Override
     public String name() {
-        return "MSET";
+        return "LPUSH";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        String[] keys = getKeys(args);
-        String[] vals = getVals(args);
-        cache.mset(keys, vals);
-        return Reply.string(OK);
+        String key = getKey(args);
+        String[] vals = getParamsNoKey(args);
+        return Reply.integer(cache.lpush(key, vals));
     }
 }

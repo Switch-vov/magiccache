@@ -1,24 +1,30 @@
 package com.switchvov.magiccache.core;
 
-import com.switchvov.magiccache.command.CommandCommand;
-import com.switchvov.magiccache.command.DecrCommand;
-import com.switchvov.magiccache.command.DelCommand;
-import com.switchvov.magiccache.command.ExistsCommand;
-import com.switchvov.magiccache.command.GetCommand;
-import com.switchvov.magiccache.command.IncrCommand;
-import com.switchvov.magiccache.command.InfoCommand;
-import com.switchvov.magiccache.command.LindexCommand;
-import com.switchvov.magiccache.command.LlenCommand;
-import com.switchvov.magiccache.command.LpopCommand;
-import com.switchvov.magiccache.command.LpushCommand;
-import com.switchvov.magiccache.command.LrangeCommand;
-import com.switchvov.magiccache.command.MgetCommand;
-import com.switchvov.magiccache.command.MsetCommand;
-import com.switchvov.magiccache.command.PingCommand;
-import com.switchvov.magiccache.command.RpopCommand;
-import com.switchvov.magiccache.command.RpushCommand;
-import com.switchvov.magiccache.command.SetCommand;
-import com.switchvov.magiccache.command.StrlenCommand;
+import com.switchvov.magiccache.command.common.CommandCommand;
+import com.switchvov.magiccache.command.set.SaddCommand;
+import com.switchvov.magiccache.command.set.ScardCommand;
+import com.switchvov.magiccache.command.set.SismemberCommand;
+import com.switchvov.magiccache.command.set.SmembersCommand;
+import com.switchvov.magiccache.command.set.SpopCommand;
+import com.switchvov.magiccache.command.set.SremCommand;
+import com.switchvov.magiccache.command.string.DecrCommand;
+import com.switchvov.magiccache.command.string.DelCommand;
+import com.switchvov.magiccache.command.string.ExistsCommand;
+import com.switchvov.magiccache.command.string.GetCommand;
+import com.switchvov.magiccache.command.string.IncrCommand;
+import com.switchvov.magiccache.command.common.InfoCommand;
+import com.switchvov.magiccache.command.list.LindexCommand;
+import com.switchvov.magiccache.command.list.LlenCommand;
+import com.switchvov.magiccache.command.list.LpopCommand;
+import com.switchvov.magiccache.command.list.LpushCommand;
+import com.switchvov.magiccache.command.list.LrangeCommand;
+import com.switchvov.magiccache.command.string.MgetCommand;
+import com.switchvov.magiccache.command.string.MsetCommand;
+import com.switchvov.magiccache.command.common.PingCommand;
+import com.switchvov.magiccache.command.list.RpopCommand;
+import com.switchvov.magiccache.command.list.RpushCommand;
+import com.switchvov.magiccache.command.string.SetCommand;
+import com.switchvov.magiccache.command.string.StrlenCommand;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,6 +67,15 @@ public class Commands {
         register(new LlenCommand());
         register(new LindexCommand());
         register(new LrangeCommand());
+
+        // set
+        register(new SaddCommand());
+        register(new SmembersCommand());
+        register(new SremCommand());
+        register(new ScardCommand());
+        register(new SpopCommand());
+        register(new SismemberCommand());
+
     }
 
     public static void register(Command command) {

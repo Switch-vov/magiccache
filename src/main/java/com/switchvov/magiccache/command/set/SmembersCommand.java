@@ -1,24 +1,25 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.set;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Decr command.
+ * Smembers command.
  *
  * @author switch
- * @since 2024/06/28
+ * @since 2024/06/29
  */
-public class DelCommand implements Command {
+public class SmembersCommand implements Command {
+
     @Override
     public String name() {
-        return "DEL";
+        return "SMEMBERS";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        String[] key = getParams(args);
-        return Reply.integer(cache.del(key));
+        String key = getKey(args);
+        return Reply.array(cache.smembers(key));
     }
 }

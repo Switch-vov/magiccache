@@ -1,24 +1,24 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.string;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Exists command.
+ * Decr command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class ExistsCommand implements Command {
+public class DelCommand implements Command {
     @Override
     public String name() {
-        return "EXISTS";
+        return "DEL";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String[] key = getParams(args);
-        return Reply.integer(cache.exists(key));
+        return Reply.integer(cache.del(key));
     }
 }

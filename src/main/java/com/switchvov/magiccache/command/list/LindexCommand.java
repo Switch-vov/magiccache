@@ -1,26 +1,26 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.list;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Lpush command.
+ * Lindex command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class LpushCommand implements Command {
+public class LindexCommand implements Command {
 
     @Override
     public String name() {
-        return "LPUSH";
+        return "LINDEX";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String key = getKey(args);
-        String[] vals = getParamsNoKey(args);
-        return Reply.integer(cache.lpush(key, vals));
+        int index = Integer.parseInt(getVal(args));
+        return Reply.bulkString(cache.lindex(key, index));
     }
 }

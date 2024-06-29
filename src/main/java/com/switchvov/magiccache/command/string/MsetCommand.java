@@ -1,26 +1,27 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.string;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Lindex command.
+ * Mset command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class LindexCommand implements Command {
+public class MsetCommand implements Command {
 
     @Override
     public String name() {
-        return "LINDEX";
+        return "MSET";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        String key = getKey(args);
-        int index = Integer.parseInt(getVal(args));
-        return Reply.bulkString(cache.lindex(key, index));
+        String[] keys = getKeys(args);
+        String[] vals = getVals(args);
+        cache.mset(keys, vals);
+        return Reply.string(OK);
     }
 }

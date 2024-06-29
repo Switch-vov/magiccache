@@ -1,28 +1,31 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.string;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Lrange command.
+ * Set command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class LrangeCommand implements Command {
+public class SetCommand implements Command {
 
     @Override
     public String name() {
-        return "LRANGE";
+        return "SET";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String key = getKey(args);
-        String[] params = getParamsNoKey(args);
-        int start = Integer.parseInt(params[0]);
-        int end = Integer.parseInt(params[1]);
-        return Reply.array(cache.lrange(key, start, end));
+        if (args.length <= 6) {
+            cache.set(key, "");
+            return Reply.string(OK);
+        }
+        String val = getVal(args);
+        cache.set(key, val);
+        return Reply.string(OK);
     }
 }

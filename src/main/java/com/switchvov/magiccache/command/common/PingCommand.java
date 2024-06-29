@@ -1,26 +1,29 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.common;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Info command.
+ * Ping command.
  *
  * @author switch
  * @since 2024/06/28
  */
-public class InfoCommand implements Command {
-    private static final String INFO = "MagicCache server, [v1.0.0], created by switch." + CRLF
-            + "Mock Redis Server at 2024-06-14." + CRLF;
+public class PingCommand implements Command {
+    private static final String PONG = "PONG";
 
     @Override
     public String name() {
-        return "INFO";
+        return "PING";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
-        return Reply.bulkString(INFO);
+        String ret = "PONG";
+        if (args.length >= 5) {
+            ret = args[4];
+        }
+        return Reply.string(ret);
     }
 }

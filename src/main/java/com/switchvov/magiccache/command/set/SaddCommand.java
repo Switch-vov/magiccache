@@ -1,26 +1,26 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.set;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
 import com.switchvov.magiccache.core.Reply;
 
 /**
- * Rpush command.
+ * Sadd command.
  *
  * @author switch
- * @since 2024/06/28
+ * @since 2024/06/29
  */
-public class RpushCommand implements Command {
+public class SaddCommand implements Command {
 
     @Override
     public String name() {
-        return "RPUSH";
+        return "SADD";
     }
 
     @Override
     public Reply<?> exec(MagicCache cache, String[] args) {
         String key = getKey(args);
         String[] vals = getParamsNoKey(args);
-        return Reply.integer(cache.rpush(key, vals));
+        return Reply.integer(cache.sadd(key, vals));
     }
 }

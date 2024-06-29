@@ -1,4 +1,4 @@
-package com.switchvov.magiccache.command;
+package com.switchvov.magiccache.command.set;
 
 import com.switchvov.magiccache.core.Command;
 import com.switchvov.magiccache.core.MagicCache;
@@ -7,16 +7,16 @@ import com.switchvov.magiccache.core.Reply;
 import java.util.Objects;
 
 /**
- * Lpop command.
+ * Spop command.
  *
  * @author switch
- * @since 2024/06/28
+ * @since 2024/06/29
  */
-public class LpopCommand implements Command {
+public class SpopCommand implements Command {
 
     @Override
     public String name() {
-        return "LPOP";
+        return "SPOP";
     }
 
     @Override
@@ -26,9 +26,9 @@ public class LpopCommand implements Command {
         if (args.length > 6) {
             String val = getVal(args);
             count = Integer.parseInt(val);
-            return Reply.array(cache.lpop(key, count));
+            return Reply.array(cache.spop(key, count));
         }
-        String[] lpop = cache.lpop(key, count);
-        return Reply.bulkString(Objects.isNull(lpop) ? null : lpop[0]);
+        String[] spop = cache.spop(key, count);
+        return Reply.bulkString(Objects.isNull(spop) ? null : spop[0]);
     }
 }

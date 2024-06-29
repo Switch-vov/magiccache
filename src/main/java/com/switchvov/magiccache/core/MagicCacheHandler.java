@@ -40,9 +40,14 @@ public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
 
         Command command = Commands.get(cmd);
         if (Objects.nonNull(command)) {
-            Reply<?> reply = command.exec(CACHE, args);
-            log.info(" ===>[MagicCache] CMD[{}] => type:{} value:{}", cmd, reply.type, reply.value);
-            replyContext(ctx, reply);
+            try {
+                Reply<?> reply = command.exec(CACHE, args);
+                log.info(" ===>[MagicCache] CMD[{}] => type:{} value:{}", cmd, reply.type, reply.value);
+                replyContext(ctx, reply);
+            } catch (Exception e) {
+                Reply<String> reply = Reply.error("EXP exception with msg: '" + e.getMessage() + "'");
+                replyContext(ctx, reply);
+            }
         } else {
             Reply<String> reply = Reply.error("ERR unsupported command: " + cmd);
             replyContext(ctx, reply);
