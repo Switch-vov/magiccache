@@ -1,6 +1,7 @@
-package com.switchvov.magiccache.core;
+package com.switchvov.magiccache.server;
 
 import com.switchvov.magiccache.MagicPlugin;
+import com.switchvov.magiccache.core.MagicCache;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -27,11 +28,22 @@ import java.util.Objects;
 @Slf4j
 public class MagicCacheServer implements MagicPlugin {
 
-    private static final int PORT = 6379;
+    private static final int DEFAULT_PORT = 6379;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel channel;
+
+    private final int port;
+    private final MagicCache cache = new MagicCache();
+
+    public MagicCacheServer() {
+        this(DEFAULT_PORT);
+    }
+
+    public MagicCacheServer(int port) {
+        this.port = port;
+    }
 
     @Override
     public void init() {
@@ -58,11 +70,11 @@ public class MagicCacheServer implements MagicPlugin {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new MagicCacheDecoder());
-                            ch.pipeline().addLast(new MagicCacheHandler());
+                            ch.pipeline().addLast(new MagicCacheHandler(cache));
                         }
                     });
 
-            channel = b.bind(PORT).sync().channel();
+            channel = b.bind(port).sync().channel();
             log.info(" ===>[MagicCache] start magic cache server, listen on {}", channel.localAddress());
             channel.closeFuture().sync();
         } catch (Exception e) {

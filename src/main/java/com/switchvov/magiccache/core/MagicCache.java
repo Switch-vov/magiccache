@@ -1,14 +1,15 @@
 package com.switchvov.magiccache.core;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import com.switchvov.magiccache.core.opr.CommonOperator;
+import com.switchvov.magiccache.core.opr.HashOperator;
+import com.switchvov.magiccache.core.opr.ListOperator;
+import com.switchvov.magiccache.core.opr.SetOperator;
+import com.switchvov.magiccache.core.opr.StringOperator;
+import com.switchvov.magiccache.core.opr.ZsetOperator;
 
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * cache entries.
@@ -17,64 +18,84 @@ import java.util.stream.Stream;
  * @since 2024/06/17
  */
 public class MagicCache {
-    Map<String, CacheEntry<?>> map = new HashMap<>();
 
-    // ===============  1. String  ===========
+    private ScheduledExecutorService executor;
 
-    public String get(String key) {
-        CacheEntry<String> entry = (CacheEntry<String>) map.get(key);
-        if (Objects.isNull(entry)) {
-            return null;
-        }
-        return entry.getValue();
+    private final CommonOperator commonOperator = new CommonOperator();
+    private final StringOperator stringOperator = new StringOperator();
+    private final ListOperator listOperator = new ListOperator();
+    private final SetOperator setOperator = new SetOperator();
+    private final ZsetOperator zsetOperator = new ZsetOperator();
+    private final HashOperator hashOperator = new HashOperator();
+
+    public void start() {
+        executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleAtFixedRate(AbstractOperator::updateTs, 10, 10, TimeUnit.MILLISECONDS);
     }
 
-    public void set(String key, String value) {
-        map.put(key, new CacheEntry<>(value));
+    public void shutdown() {
+        executor.shutdown();
+        if (!executor.isTerminated()) {
+            try {
+                if (!executor.awaitTermination(3, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    // ===============  0. Common  ===========
+
+    public int exists(String... keys) {
+        return commonOperator.exists(keys);
     }
 
     public int del(String... keys) {
-        return Objects.isNull(keys) ? 0 : (int) Arrays.stream(keys).map(map::remove).filter(Objects::nonNull).count();
+        return commonOperator.del(keys);
     }
 
-    public int exists(String... keys) {
-        return Objects.isNull(keys) ? 0 : (int) Arrays.stream(keys).filter(map::containsKey).count();
+    public boolean expire(String key, long ttl) {
+        return commonOperator.expire(key, ttl);
+    }
+
+    public long ttl(String key) {
+        return commonOperator.ttl(key);
+    }
+
+
+    // ===============  0. Common end ===========
+
+    // ===============  1. String  ===========
+
+    public void set(String key, String value) {
+        stringOperator.set(key, value);
+    }
+
+    public String get(String key) {
+        return stringOperator.get(key);
     }
 
     public String[] mget(String... keys) {
-        return Objects.isNull(keys) ? new String[0] : Arrays.stream(keys).map(this::get).toArray(String[]::new);
+        return stringOperator.mget(keys);
     }
 
     public void mset(String[] keys, String[] vals) {
-        if (Objects.isNull(keys) || keys.length == 0) {
-            return;
-        }
-        for (int i = 0; i < keys.length; i++) {
-            set(keys[i], vals[i]);
-        }
-    }
-
-    public int incr(String key) {
-        return toInt(key, val -> val + 1);
-    }
-
-    public int decr(String key) {
-        return toInt(key, val -> val - 1);
-    }
-
-    public int toInt(String key, Function<Integer, Integer> operator) {
-        String str = get(key);
-        int val = 0;
-        if (Objects.nonNull(str)) {
-            val = Integer.parseInt(str);
-        }
-        val = operator.apply(val);
-        set(key, String.valueOf(val));
-        return val;
+        stringOperator.mset(keys, vals);
     }
 
     public Integer strlen(String key) {
-        return Objects.isNull(get(key)) ? null : get(key).length();
+        return stringOperator.strlen(key);
+    }
+
+    public int incr(String key) {
+        return stringOperator.incr(key);
+    }
+
+    public int decr(String key) {
+        return stringOperator.decr(key);
     }
 
     // ===============  1. String end ===========
@@ -82,113 +103,31 @@ public class MagicCache {
     // ===============  2. list  ===========
 
     public Integer lpush(String key, String... vals) {
-        if (vals == null) {
-            return 0;
-        }
-        map.computeIfAbsent(key, k -> new CacheEntry<>(new LinkedList<String>()));
-        CacheEntry<?> entry = map.get(key);
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        Arrays.stream(vals).forEach(exist::addFirst);
-        return vals.length;
+        return listOperator.lpush(key, vals);
     }
 
     public String[] lpop(String key, int count) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return null;
-        }
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        if (Objects.isNull(exist)) {
-            return null;
-        }
-        int len = Math.min(count, exist.size());
-        String[] ret = new String[len];
-        for (int i = 0; i < len; i++) {
-            ret[i] = exist.removeFirst();
-        }
-        return ret;
+        return listOperator.lpop(key, count);
     }
 
     public Integer rpush(String key, String... vals) {
-        if (vals == null) {
-            return 0;
-        }
-        map.computeIfAbsent(key, k -> new CacheEntry<>(new LinkedList<String>()));
-        CacheEntry<?> entry = map.get(key);
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        exist.addAll(List.of(vals));
-        return vals.length;
+        return listOperator.rpush(key, vals);
     }
 
     public String[] rpop(String key, int count) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return null;
-        }
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        if (Objects.isNull(exist)) {
-            return null;
-        }
-        int len = Math.min(count, exist.size());
-        String[] ret = new String[len];
-        for (int i = 0; i < len; i++) {
-            ret[i] = exist.removeLast();
-        }
-        return ret;
+        return listOperator.rpop(key, count);
     }
 
     public int llen(String key) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return 0;
-        }
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        if (Objects.isNull(exist)) {
-            return 0;
-        }
-        return exist.size();
+        return listOperator.llen(key);
     }
 
     public String lindex(String key, int index) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return null;
-        }
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        if (Objects.isNull(exist)) {
-            return null;
-        }
-        if (index >= exist.size()) {
-            return null;
-        }
-        return exist.get(index);
+        return listOperator.lindex(key, index);
     }
 
     public String[] lrange(String key, int start, int end) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return null;
-        }
-        LinkedList<String> exist = (LinkedList<String>) entry.getValue();
-        if (Objects.isNull(exist)) {
-            return null;
-        }
-        int size = exist.size();
-        if (start >= size) {
-            return null;
-        }
-        if (start <= 0) {
-            start = 0;
-        }
-        if (end >= size) {
-            end = size - 1;
-        }
-        int len = Math.min(size, end - start + 1);
-        String[] ret = new String[len];
-        for (int i = 0; i < len; i++) {
-            ret[i] = exist.get(start + i);
-        }
-        return ret;
+        return listOperator.lrange(key, start, end);
     }
 
     // ===============  2. list end ===========
@@ -196,66 +135,27 @@ public class MagicCache {
     // ===============  3. set  ===========
 
     public Integer sadd(String key, String[] vals) {
-        if (vals == null) {
-            return 0;
-        }
-        map.computeIfAbsent(key, k -> new CacheEntry<>(new LinkedHashSet<String>()));
-        CacheEntry<?> entry = map.get(key);
-        LinkedHashSet<String> exist = (LinkedHashSet<String>) entry.getValue();
-        int count = 0;
-        for (String val : vals) {
-            if (exist.add(val)) {
-                count++;
-            }
-        }
-        return count;
+        return setOperator.sadd(key, vals);
     }
 
     public String[] smembers(String key) {
-        Optional<LinkedHashSet<String>> exist = getValueFromSet(key);
-        return exist.map(e -> e.toArray(String[]::new)).orElse(null);
+        return setOperator.smembers(key);
     }
 
     public Integer scard(String key) {
-        Optional<LinkedHashSet<String>> exist = getValueFromSet(key);
-        return exist.map(HashSet::size).orElse(0);
+        return setOperator.scard(key);
     }
 
     public Integer sismember(String key, String val) {
-        Optional<LinkedHashSet<String>> exist = getValueFromSet(key);
-        return exist.map(e -> e.contains(val) ? 1 : 0).orElse(0);
+        return setOperator.sismember(key, val);
     }
 
     public Integer srem(String key, String[] vals) {
-        if (Objects.isNull(vals)) {
-            return 0;
-        }
-        Optional<LinkedHashSet<String>> exist = getValueFromSet(key);
-        return exist.map(e -> Math.toIntExact(Arrays.stream(vals).filter(e::remove).count())).orElse(0);
+        return setOperator.srem(key, vals);
     }
 
     public String[] spop(String key, int count) {
-        Optional<LinkedHashSet<String>> exist = getValueFromSet(key);
-        return exist.map(e -> {
-            int len = Math.min(count, e.size());
-            String[] ret = new String[len];
-            for (int i = 0; i < len; i++) {
-                List<String> array = e.stream().toList();
-                String obj = array.get(ThreadLocalRandom.current().nextInt(array.size()));
-                e.remove(obj);
-                ret[i] = obj;
-            }
-            return ret;
-        }).orElse(null);
-    }
-
-    private Optional<LinkedHashSet<String>> getValueFromSet(String key) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return Optional.empty();
-        }
-        LinkedHashSet<String> exist = (LinkedHashSet<String>) entry.getValue();
-        return Optional.ofNullable(exist);
+        return setOperator.spop(key, count);
     }
 
     // ===============  3. set end ===========
@@ -263,64 +163,31 @@ public class MagicCache {
     // ===============  4. hash ===========
 
     public Integer hset(String key, String[] hkeys, String[] hvals) {
-        if (Objects.isNull(hkeys) || hkeys.length == 0) {
-            return 0;
-        }
-        if (Objects.isNull(hvals) || hvals.length == 0) {
-            return 0;
-        }
-        map.computeIfAbsent(key, k -> new CacheEntry<>(new LinkedHashMap<String, String>()));
-        CacheEntry<?> entry = map.get(key);
-        LinkedHashMap<String, String> exist = (LinkedHashMap<String, String>) entry.getValue();
-        for (int i = 0; i < hkeys.length; i++) {
-            exist.put(hkeys[i], hvals[i]);
-        }
-        return Math.toIntExact(Arrays.stream(hkeys).distinct().count());
+        return hashOperator.hset(key, hkeys, hvals);
     }
 
     public String hget(String key, String hkey) {
-        Optional<LinkedHashMap<String, String>> exist = getValueFromHash(key);
-        return exist.map(e -> e.get(hkey)).orElse(null);
+        return hashOperator.hget(key, hkey);
     }
 
     public String[] hgetall(String key) {
-        Optional<LinkedHashMap<String, String>> exits = getValueFromHash(key);
-        return exits.map(e ->
-                e.entrySet().stream().flatMap(en -> Stream.of(en.getKey(), en.getValue())).toArray(String[]::new)
-        ).orElse(null);
+        return hashOperator.hgetall(key);
     }
 
     public String[] hmget(String key, String[] hkeys) {
-        Optional<LinkedHashMap<String, String>> exist = getValueFromHash(key);
-        return exist.map(e ->
-                Objects.isNull(hkeys) ? new String[0] : Arrays.stream(hkeys).map(e::get).toArray(String[]::new)
-        ).orElse(null);
+        return hashOperator.hmget(key, hkeys);
     }
 
     public Integer hlen(String key) {
-        Optional<LinkedHashMap<String, String>> exist = getValueFromHash(key);
-        return exist.map(HashMap::size).orElse(0);
+        return hashOperator.hlen(key);
     }
 
     public Integer hexists(String key, String hkey) {
-        Optional<LinkedHashMap<String, String>> exist = getValueFromHash(key);
-        return exist.map(e -> e.containsKey(hkey) ? 1 : 0).orElse(0);
+        return hashOperator.hexists(key, hkey);
     }
 
     public Integer hdel(String key, String[] hkeys) {
-        Optional<LinkedHashMap<String, String>> exist = getValueFromHash(key);
-        return exist.map(e ->
-                Objects.isNull(hkeys) ? 0 : Math.toIntExact(Arrays.stream(hkeys).map(e::remove).filter(Objects::nonNull).count())
-        ).orElse(0);
-    }
-
-    private Optional<LinkedHashMap<String, String>> getValueFromHash(String key) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return Optional.empty();
-        }
-        LinkedHashMap<String, String> exist = (LinkedHashMap<String, String>) entry.getValue();
-        return Optional.ofNullable(exist);
+        return hashOperator.hdel(key, hkeys);
     }
 
     // ===============  4. hash end ===========
@@ -328,88 +195,28 @@ public class MagicCache {
     // ===============  5. zset end ===========
 
     public Integer zadd(String key, String[] values, double[] scores) {
-        if (Objects.isNull(values) || values.length == 0) {
-            throw new RuntimeException("ERR wrong number of arguments for 'zadd' command");
-        }
-        if (Objects.isNull(scores) || scores.length == 0) {
-            throw new RuntimeException("ERR wrong number of arguments for 'zadd' command");
-        }
-        map.computeIfAbsent(key, k -> new CacheEntry<>(new LinkedHashSet<ZsetEntry>()));
-        CacheEntry<?> entry = map.get(key);
-        LinkedHashSet<ZsetEntry> exist = (LinkedHashSet<ZsetEntry>) entry.getValue();
-        int count = 0;
-        for (int i = 0; i < values.length; i++) {
-            ZsetEntry addEntry = new ZsetEntry(values[i], scores[i]);
-            boolean remove = exist.removeIf(e -> e.equals(addEntry));
-            boolean add = exist.add(addEntry);
-            if (!remove && add) {
-                count++;
-            }
-        }
-        return count;
+        return zsetOperator.zadd(key, values, scores);
     }
 
     public Integer zcard(String key) {
-        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
-        return exist.map(HashSet::size).orElse(0);
+        return zsetOperator.zcard(key);
     }
 
     public Integer zcount(String key, double min, double max) {
-        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
-        return exist.map(e ->
-                Math.toIntExact(e.stream().filter(x -> x.getScore() >= min && x.getScore() <= max).count())
-        ).orElse(0);
+        return zsetOperator.zcount(key, min, max);
     }
 
     public Double zscore(String key, String val) {
-        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
-        return exist.flatMap(e ->
-                e.stream().filter(x -> x.getValue().equals(val)).map(ZsetEntry::getScore).findFirst()
-        ).orElse(null);
+        return zsetOperator.zscore(key, val);
     }
 
     public Integer zrank(String key, String val) {
-        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
-        return exist.map(e -> {
-            Double zscore = zscore(key, val);
-            if (Objects.isNull(zscore)) {
-                return null;
-            }
-            return Math.toIntExact(e.stream().filter(x -> x.getScore() < zscore).count());
-        }).orElse(null);
+        return zsetOperator.zrank(key, val);
     }
 
     public Integer zrem(String key, String[] vals) {
-        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
-        return exist.map(e -> Objects.isNull(vals) ? 0 :
-                Math.toIntExact(Arrays.stream(vals).filter(x -> e.removeIf(en -> en.getValue().equals(x))).count())
-        ).orElse(null);
-    }
-
-    private Optional<LinkedHashSet<ZsetEntry>> getValueFromZset(String key) {
-        CacheEntry<?> entry = map.get(key);
-        if (Objects.isNull(entry)) {
-            return Optional.empty();
-        }
-        LinkedHashSet<ZsetEntry> exist = (LinkedHashSet<ZsetEntry>) entry.getValue();
-        return Optional.ofNullable(exist);
+        return zsetOperator.zrem(key, vals);
     }
 
     // ===============  5. zset end ===========
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class CacheEntry<T> {
-        private T value;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @EqualsAndHashCode(of = "value")
-    private static class ZsetEntry {
-        private String value;
-        private double score;
-    }
 }

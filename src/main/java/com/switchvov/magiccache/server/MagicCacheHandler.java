@@ -1,5 +1,9 @@
-package com.switchvov.magiccache.core;
+package com.switchvov.magiccache.server;
 
+import com.switchvov.magiccache.core.Command;
+import com.switchvov.magiccache.core.Commands;
+import com.switchvov.magiccache.core.MagicCache;
+import com.switchvov.magiccache.core.Reply;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -30,7 +34,11 @@ public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
 
     private static final String OK = "OK";
 
-    private static final MagicCache CACHE = new MagicCache();
+    private final MagicCache cache;
+
+    public MagicCacheHandler(MagicCache cache) {
+        this.cache = cache;
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
@@ -41,8 +49,8 @@ public class MagicCacheHandler extends SimpleChannelInboundHandler<String> {
         Command command = Commands.get(cmd);
         if (Objects.nonNull(command)) {
             try {
-                Reply<?> reply = command.exec(CACHE, args);
-                log.info(" ===>[MagicCache] CMD[{}] => type:{} value:{}", cmd, reply.type, reply.value);
+                Reply<?> reply = command.exec(cache, args);
+                log.info(" ===>[MagicCache] CMD[{}] => type:{} value:{}", cmd, reply.getType(), reply.getValue());
                 replyContext(ctx, reply);
             } catch (Exception e) {
                 Reply<String> reply = Reply.error("EXP exception with msg: '" + e.getMessage() + "'");

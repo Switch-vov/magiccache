@@ -1,6 +1,8 @@
 package com.switchvov.magiccache.core;
 
 import com.switchvov.magiccache.command.common.CommandCommand;
+import com.switchvov.magiccache.command.common.ExpireCommand;
+import com.switchvov.magiccache.command.common.TtlCommand;
 import com.switchvov.magiccache.command.hash.HdelCommand;
 import com.switchvov.magiccache.command.hash.HexistsCommand;
 import com.switchvov.magiccache.command.hash.HgetCommand;
@@ -57,54 +59,56 @@ public class Commands {
 
     private static void initCommands() {
         // common commands
-        register(new PingCommand());
-        register(new InfoCommand());
         register(new CommandCommand());
+        register(new InfoCommand());
+        register(new PingCommand());
+        register(new ExpireCommand());
+        register(new TtlCommand());
 
         // string
         register(new SetCommand());
         register(new GetCommand());
-        register(new StrlenCommand());
-        register(new DelCommand());
-        register(new ExistsCommand());
-        register(new IncrCommand());
-        register(new DecrCommand());
         register(new MsetCommand());
         register(new MgetCommand());
+        register(new ExistsCommand());
+        register(new DelCommand());
+        register(new StrlenCommand());
+        register(new IncrCommand());
+        register(new DecrCommand());
 
         // list
         register(new LpushCommand());
         register(new LpopCommand());
-        register(new RpopCommand());
-        register(new RpushCommand());
         register(new LlenCommand());
         register(new LindexCommand());
         register(new LrangeCommand());
+        register(new RpushCommand());
+        register(new RpopCommand());
 
         // set
         register(new SaddCommand());
-        register(new SmembersCommand());
         register(new SremCommand());
         register(new ScardCommand());
-        register(new SpopCommand());
         register(new SismemberCommand());
+        register(new SmembersCommand());
+        register(new SpopCommand());
 
         // hash
         register(new HsetCommand());
         register(new HgetCommand());
         register(new HgetallCommand());
-        register(new HlenCommand());
         register(new HdelCommand());
+        register(new HlenCommand());
         register(new HexistsCommand());
         register(new HmgetCommand());
 
         // zset
         register(new ZaddCommand());
-        register(new ZcardCommand());
-        register(new ZscoreCommand());
         register(new ZremCommand());
-        register(new ZrankCommand());
+        register(new ZscoreCommand());
+        register(new ZcardCommand());
         register(new ZcountCommand());
+        register(new ZrankCommand());
     }
 
     public static void register(Command command) {
