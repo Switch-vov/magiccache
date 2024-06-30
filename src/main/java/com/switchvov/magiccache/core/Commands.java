@@ -32,6 +32,12 @@ import com.switchvov.magiccache.command.list.RpopCommand;
 import com.switchvov.magiccache.command.list.RpushCommand;
 import com.switchvov.magiccache.command.string.SetCommand;
 import com.switchvov.magiccache.command.string.StrlenCommand;
+import com.switchvov.magiccache.command.zset.ZaddCommand;
+import com.switchvov.magiccache.command.zset.ZcardCommand;
+import com.switchvov.magiccache.command.zset.ZcountCommand;
+import com.switchvov.magiccache.command.zset.ZrankCommand;
+import com.switchvov.magiccache.command.zset.ZremCommand;
+import com.switchvov.magiccache.command.zset.ZscoreCommand;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -91,6 +97,14 @@ public class Commands {
         register(new HdelCommand());
         register(new HexistsCommand());
         register(new HmgetCommand());
+
+        // zset
+        register(new ZaddCommand());
+        register(new ZcardCommand());
+        register(new ZscoreCommand());
+        register(new ZremCommand());
+        register(new ZrankCommand());
+        register(new ZcountCommand());
     }
 
     public static void register(Command command) {

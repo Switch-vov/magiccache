@@ -2,6 +2,7 @@ package com.switchvov.magiccache.core;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.*;
@@ -326,6 +327,74 @@ public class MagicCache {
 
     // ===============  5. zset end ===========
 
+    public Integer zadd(String key, String[] values, double[] scores) {
+        if (Objects.isNull(values) || values.length == 0) {
+            throw new RuntimeException("ERR wrong number of arguments for 'zadd' command");
+        }
+        if (Objects.isNull(scores) || scores.length == 0) {
+            throw new RuntimeException("ERR wrong number of arguments for 'zadd' command");
+        }
+        map.computeIfAbsent(key, k -> new CacheEntry<>(new LinkedHashSet<ZsetEntry>()));
+        CacheEntry<?> entry = map.get(key);
+        LinkedHashSet<ZsetEntry> exist = (LinkedHashSet<ZsetEntry>) entry.getValue();
+        int count = 0;
+        for (int i = 0; i < values.length; i++) {
+            ZsetEntry addEntry = new ZsetEntry(values[i], scores[i]);
+            boolean remove = exist.removeIf(e -> e.equals(addEntry));
+            boolean add = exist.add(addEntry);
+            if (!remove && add) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public Integer zcard(String key) {
+        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
+        return exist.map(HashSet::size).orElse(0);
+    }
+
+    public Integer zcount(String key, double min, double max) {
+        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
+        return exist.map(e ->
+                Math.toIntExact(e.stream().filter(x -> x.getScore() >= min && x.getScore() <= max).count())
+        ).orElse(0);
+    }
+
+    public Double zscore(String key, String val) {
+        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
+        return exist.flatMap(e ->
+                e.stream().filter(x -> x.getValue().equals(val)).map(ZsetEntry::getScore).findFirst()
+        ).orElse(null);
+    }
+
+    public Integer zrank(String key, String val) {
+        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
+        return exist.map(e -> {
+            Double zscore = zscore(key, val);
+            if (Objects.isNull(zscore)) {
+                return null;
+            }
+            return Math.toIntExact(e.stream().filter(x -> x.getScore() < zscore).count());
+        }).orElse(null);
+    }
+
+    public Integer zrem(String key, String[] vals) {
+        Optional<LinkedHashSet<ZsetEntry>> exist = getValueFromZset(key);
+        return exist.map(e -> Objects.isNull(vals) ? 0 :
+                Math.toIntExact(Arrays.stream(vals).filter(x -> e.removeIf(en -> en.getValue().equals(x))).count())
+        ).orElse(null);
+    }
+
+    private Optional<LinkedHashSet<ZsetEntry>> getValueFromZset(String key) {
+        CacheEntry<?> entry = map.get(key);
+        if (Objects.isNull(entry)) {
+            return Optional.empty();
+        }
+        LinkedHashSet<ZsetEntry> exist = (LinkedHashSet<ZsetEntry>) entry.getValue();
+        return Optional.ofNullable(exist);
+    }
+
     // ===============  5. zset end ===========
 
     @Data
@@ -333,5 +402,14 @@ public class MagicCache {
     @NoArgsConstructor
     public static class CacheEntry<T> {
         private T value;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @EqualsAndHashCode(of = "value")
+    private static class ZsetEntry {
+        private String value;
+        private double score;
     }
 }
