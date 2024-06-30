@@ -1,6 +1,13 @@
 package com.switchvov.magiccache.core;
 
 import com.switchvov.magiccache.command.common.CommandCommand;
+import com.switchvov.magiccache.command.hash.HdelCommand;
+import com.switchvov.magiccache.command.hash.HexistsCommand;
+import com.switchvov.magiccache.command.hash.HgetCommand;
+import com.switchvov.magiccache.command.hash.HgetallCommand;
+import com.switchvov.magiccache.command.hash.HlenCommand;
+import com.switchvov.magiccache.command.hash.HmgetCommand;
+import com.switchvov.magiccache.command.hash.HsetCommand;
 import com.switchvov.magiccache.command.set.SaddCommand;
 import com.switchvov.magiccache.command.set.ScardCommand;
 import com.switchvov.magiccache.command.set.SismemberCommand;
@@ -76,6 +83,14 @@ public class Commands {
         register(new SpopCommand());
         register(new SismemberCommand());
 
+        // hash
+        register(new HsetCommand());
+        register(new HgetCommand());
+        register(new HgetallCommand());
+        register(new HlenCommand());
+        register(new HdelCommand());
+        register(new HexistsCommand());
+        register(new HmgetCommand());
     }
 
     public static void register(Command command) {
